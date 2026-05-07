@@ -9,9 +9,38 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Telegram message
+      - name: Notify deploy started
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
           -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
           -d parse_mode="Markdown" \
-          -d text="🚀 *Nuevo deploy iniciado*%0A📦 Repo: ${{ github.repository }}%0A👤 Por: ${{ github.actor }}%0A📝 Commit: ${{ github.event.head_commit.message }}"
+          -d text="🔄 *Deploy iniciado*%0A📦 ${{ github.repository }}%0A👤 ${{ github.actor }}%0A📝 ${{ github.event.head_commit.message }}"
+
+      - name: Wait for Vercel deployment
+        id: vercel
+        run: |
+          echo "Esperando que Vercel procese..."
+          sleep 15
+
+          RESPONSE=$(curl -s "https://api.vercel.com/v6/deployments?projectId=${{ secrets.VERCEL_PROJECT_ID }}&limit=1" \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}")
+
+          STATE=$(echo $RESPONSE | python3 -c "import sys,json; d=json.load(sys.stdin)['deployments'][0]; print(d['state'])")
+          URL=$(echo $RESPONSE | python3 -c "import sys,json; d=json.load(sys.stdin)['deployments'][0]; print(d.get('url','sin url'))")
+          DEPLOY_ID=$(echo $RESPONSE | python3 -c "import sys,json; d=json.load(sys.stdin)['deployments'][0]; print(d['uid'])")
+
+          echo "state=$STATE" >> $GITHUB_OUTPUT
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+
+      - name: Wait if still building
+        if: steps.vercel.outputs.state == 'BUILDING' || steps.vercel.outputs.state == 'QUEUED'
+        run: |
+          echo "Aún construyendo, esperando 40 segundos más..."
+          sleep 40
+
+          RESPONSE=$(curl -s "https://api.vercel.com/v6/deployments?projectId=${{ secrets.VERCEL_PROJECT_ID }}&limit=1" \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}")
+
+          STATE=$(echo $RESPONSE | python3 -c "import sys,json; d=json.load(sys.stdin)['deployments'][0]; print(d['state'])")
+          URL=$(echo $RESPONSE
