@@ -1,62 +1,63 @@
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
+
+  if (req.method === "GET") {
+    return res.status(200).send("Webhook funcionando 🚀");
+  }
+
   if (req.method !== "POST") {
     return res.status(405).send("Method not allowed");
   }
 
   try {
-    const body = req.body;
 
-    // Variables de entorno
     const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-    // Evento recibido desde Vercel
-    const event = body.type;
+    const body = req.body || {};
 
-    const project = body.payload?.name || "Proyecto";
-    const url = body.payload?.url || "";
+    const event = body.type || "unknown";
 
-    let message = "";
+    const project =
+      body.payload?.name ||
+      "Proyecto";
 
-    // Deploy iniciado
+    const deploymentUrl =
+      body.payload?.url ||
+      "";
+
+    let message = `📡 Evento: ${event}`;
+
     if (event === "deployment.created") {
       message =
         `🚀 Deploy iniciado\n\n` +
         `📦 Proyecto: ${project}`;
     }
 
-    // Deploy exitoso
     if (
       event === "deployment.ready" ||
       event === "deployment.succeeded"
     ) {
       message =
         `✅ Deploy completado\n\n` +
-        `📦 Proyecto: ${project}\n` +
-        `🌐 https://${url}`;
+        `📦 Proyecto: ${project}\n\n` +
+        `🌐 https://${deploymentUrl}`;
     }
 
-    // Error
-    if (event === "deployment.error") {
+    if (
+      event === "deployment.error" ||
+      event === "deployment.failed"
+    ) {
       message =
         `❌ Deploy falló\n\n` +
         `📦 Proyecto: ${project}`;
     }
 
-    // Si no hay mensaje, ignorar
-    if (!message) {
-      return res.status(200).json({
-        ignored: true,
-      });
-    }
-
-    // Enviar mensaje a Telegram
-    const telegramResponse = await fetch(
+    const response = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`,
       {
         method: "POST",
         headers: {
-          "Content-Type":  "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           chat_id: CHAT_ID,
@@ -65,17 +66,20 @@ export default async function handler(req, res) {
       }
     );
 
-    const telegramData = await telegramResponse.json();
+    const data = await response.json();
 
     return res.status(200).json({
       success: true,
-      telegram: telegramData,
+      telegram: data,
     });
 
   } catch (error) {
+
     return res.status(500).json({
       success: false,
       error: error.message,
     });
+
   }
-}
+
+};
