@@ -1,0 +1,17 @@
+name: Notify Telegram on Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram message
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+          -d parse_mode="Markdown" \
+          -d text="🚀 *Nuevo deploy iniciado*%0A📦 Repo: ${{ github.repository }}%0A👤 Por: ${{ github.actor }}%0A📝 Commit: ${{ github.event.head_commit.message }}"
