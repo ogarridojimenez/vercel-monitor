@@ -79,7 +79,7 @@ module.exports = async (req, res) => {
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type":    "application/json",
         },
         body: JSON.stringify({
           chat_id: CHAT_ID,
@@ -92,7 +92,7 @@ module.exports = async (req, res) => {
 
     console.log("TELEGRAM:",     telegramData);
 
-    return res.status(200).json({
+    return res.status(200).json({    
       success: true,
       telegram: telegramData,
     });
