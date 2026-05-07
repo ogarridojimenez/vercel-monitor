@@ -88,9 +88,9 @@ module.exports = async (req, res) => {
       }
     );
 
-    const telegramData = await   telegramResponse.json();
+    const telegramData =   await        telegramResponse.json();
 
-    console.log("TELEGRAM:", telegramData);
+    console.log("TELEGRAM:",     telegramData);
 
     return res.status(200).json({
       success: true,
