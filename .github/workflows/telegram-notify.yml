@@ -37,20 +37,22 @@ jobs:
                 -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" | \
                 python3 -c "
           import sys, json
-          try:
-            events = json.load(sys.stdin)
-            lines = []
-            for e in events:
-              text = e.get('text', '').strip()
-              if text:
-                lines.append(text)
-            result = lines[-15:] if len(lines) > 15 else lines
-            print('%0A'.join(result)) if result else print('Sin logs disponibles')
-          except Exception as ex:
-            print('Error:', str(ex))
+          lines = []
+          for line in sys.stdin:
+              line = line.strip()
+              if line:
+                  try:
+                      e = json.loads(line)
+                      text = e.get('text', '').strip()
+                      if text:
+                          lines.append(text)
+                  except:
+                      pass
+          result = lines[-15:] if len(lines) > 15 else lines
+          print('%0A'.join(result)) if result else print('Sin logs disponibles')
                 ")
 
-              echo "=== LOGS OBTENIDOS ==="
+              echo "=== LOGS ==="
               echo "$LOGS"
 
               if [ "$STATE" = "READY" ]; then
@@ -74,4 +76,4 @@ jobs:
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
           -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
           -d parse_mode="Markdown" \
-          -d text="⚠️ *Timeout*%0ANo se pudo confirmar el estado del deploy%0A📦 ${{ github.repository }}"
+          -d text="⚠️ *Timeout*%0ANo se
