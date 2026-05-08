@@ -97,7 +97,7 @@ module.exports = async (req, res) => {
       telegram: telegramData,
     });
 
-  } catch (error) {
+  } catch (error ) {
 
     console.error(error);
 
