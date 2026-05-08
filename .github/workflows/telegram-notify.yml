@@ -40,10 +40,12 @@ jobs:
           lines = []
           for line in sys.stdin:
               line = line.strip()
-              if line:
+              if line.startswith('data:'):
                   try:
-                      e = json.loads(line)
+                      e = json.loads(line[5:].strip())
                       text = e.get('text', '').strip()
+                      if not text:
+                          text = e.get('payload', {}).get('text', '').strip()
                       if text:
                           lines.append(text)
                   except:
@@ -76,4 +78,4 @@ jobs:
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
           -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
           -d parse_mode="Markdown" \
-          -d text="⚠️ *Timeout*%0ANo se
+          -d text="⚠️ *Timeout*%0ANo se pudo confirmar el estado del deploy%0A📦 ${{ github.repository }}"
